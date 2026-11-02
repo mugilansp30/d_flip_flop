@@ -1,8 +1,13 @@
 # ModelSim / QuestaSim Simulation Artifacts
 work/
+**/work/
 transcript
+**/transcript
 *.wlf
+**/*.wlf
+vsim.wlf
 modelsim.ini
+**/modelsim.ini
 *.mpf
 *.mti
 *.cr.mti
@@ -23,5 +28,6 @@ covhtmlreport/
 Thumbs.db
 *.swp
 *.bak
+**/*.bak
 .vscode/
 .idea/

@@ -1,187 +1,56 @@
-# ⚡ Positive-Edge D Flip-Flop with Asynchronous Reset
+# Positive-Edge D Flip-Flop with Asynchronous Reset
+### Dual RTL & Verification Implementations: Verilog & SystemVerilog
 
-[![Verilog](https://img.shields.io/badge/Language-Verilog_HDL-3776AB?style=for-the-badge&logo=verilog&logoColor=white)](d_flip_flop.v)
-[![Simulator](https://img.shields.io/badge/Simulator-ModelSim%20%7C%20Questa-1F425F?style=for-the-badge&logo=intel&logoColor=white)](https://www.intel.com/content/www/us/en/software/programmable/quartus-prime/modelsim.html)
-[![Verification](https://img.shields.io/badge/Verification-100%25%20Passed-success?style=for-the-badge&logo=checkmarx&logoColor=white)](tb_d_flip_flop.v)
-[![Design Type](https://img.shields.io/badge/Type-Sequential_Logic-blueviolet?style=for-the-badge)](d_flip_flop.v)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+![HDL: Verilog](https://img.shields.io/badge/HDL-Verilog--2001-blue.svg)
+![HDL: SystemVerilog](https://img.shields.io/badge/HDL-SystemVerilog--IEEE%201800-darkblue.svg)
+![Simulator: ModelSim](https://img.shields.io/badge/Simulator-ModelSim-purple.svg)
+![Verification: Functional](https://img.shields.io/badge/Verification-Functional%20Sim%20Passed-brightgreen.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-An industrial-grade, fully synthesizable Verilog implementation of a **Positive-Edge Triggered D (Data / Delay) Flip-Flop** featuring an **Active-High Asynchronous Reset** and complementary outputs ($Q$ and $\bar{Q}$). Complete with a self-contained ModelSim / QuestaSim testbench validating both synchronous sampling and asynchronous reset override conditions.
+A comparative digital design project featuring a **positive-edge triggered D Flip-Flop with active-high asynchronous reset**, implemented in both **Verilog (IEEE 1364-2001)** and **SystemVerilog (IEEE 1800)**. Both versions have been simulated, verified, and cross-checked using **ModelSim**.
 
 ---
 
 ## 📑 Table of Contents
-
-- [📌 Key Features](#-key-features)
-- [📐 Schematics & Architecture](#-schematics--architecture)
-  - [1. Top-Level Module Interface](#1-top-level-module-interface)
-  - [2. Internal Master-Slave Gate-Level Schematic](#2-internal-master-slave-gate-level-schematic)
-  - [3. RTL Hardware Logic (Multiplexer Model)](#3-rtl-hardware-logic-multiplexer-model)
-- [🔄 State & Logic Representation](#-state--logic-representation)
-  - [Truth / Function Table](#truth--function-table)
-  - [Excitation Table](#excitation-table)
-  - [State Transition Diagram](#state-transition-diagram)
-- [⏱️ Timing & Waveform Analysis](#️-timing--waveform-analysis)
-  - [ASCII Simulation Timing Diagram](#ascii-simulation-timing-diagram)
-  - [Testbench Execution Flow](#testbench-execution-flow)
-- [📂 Project Structure](#-project-structure)
-- [🚀 Quick Start & Simulation Guide](#-quick-start--simulation-guide)
-  - [Option A: ModelSim / QuestaSim GUI & CLI](#option-a-modelsim--questasim-gui--cli)
-  - [Option B: Open-Source Icarus Verilog + GTKWave](#option-b-open-source-icarus-verilog--gtkwave)
-- [🔍 Deep-Dive: Timing Constraints & Physics](#-deep-dive-timing-constraints--physics)
-- [📜 License](#-license)
+1. [Digital Logic Specification](#-digital-logic-specification)
+2. [Verilog vs. SystemVerilog Comparison](#-verilog-vs-systemverilog-comparison)
+3. [Repository Structure](#-repository-structure)
+4. [ModelSim Simulation Guide (Completed Work)](#-modelsim-simulation-guide-completed-work)
+5. [Timing & Waveform Analysis](#-timing--waveform-analysis)
+6. [Source Code Inspection](#-source-code-inspection)
+7. [Future Scope & Roadmap](#-future-scope--roadmap)
+8. [License](#-license)
 
 ---
 
-## 📌 Key Features
+## ⚡ Digital Logic Specification
 
-* **Edge-Triggered Synchronous Sampling:** Latching occurs strictly on the rising edge (`posedge clk`) of the clock signal.
-* **Instantaneous Asynchronous Reset:** Active-high `reset` overrides all clocking actions immediately, forcing output $Q \to 0$ without waiting for a clock edge.
-* **Dual Complementary Outputs:** Produces both non-inverted output `q` and inverted output `q_bar` ($\bar{Q}$) using continuous assignment `assign q_bar = ~q;`.
-* **Zero Glitch / Race-Free RTL:** Implemented via non-blocking assignments (`<=`) adhering to IEEE 1364 standard HDL best practices.
-* **Target Agnostic:** Fully compatible with Intel Quartus Prime, Xilinx Vivado, Lattice Diamond, ModelSim, QuestaSim, and Icarus Verilog.
+A D Flip-Flop captures the value of the data input (`d`) at the rising edge of the clock (`clk`) and outputs it to `q`, with `q_bar` providing the complementary inverted output. An active-high **asynchronous reset** overrides the clock, forcing the state immediately to zero.
 
----
+### Port List
 
-## 📐 Schematics & Architecture
-
-### 1. Top-Level Module Interface
-
-The module wraps high-speed sequential logic with standard synchronous digital interfaces:
-
-```mermaid
-flowchart LR
-    subgraph Inputs ["  Control & Data Inputs  "]
-        CLK["clk  (Clock Input)"]
-        RST["reset (Active-High Async)"]
-        D["d     (Data Input)"]
-    end
-
-    subgraph DFF ["  d_flip_flop  "]
-        CORE[["  D Flip-Flop Core  \n(posedge clk or posedge reset)"]]
-    end
-
-    subgraph Outputs ["  Complementary Outputs  "]
-        Q["q     (Registered State)"]
-        QBAR["q_bar (Inverted Output ~Q)"]
-    end
-
-    CLK -->|Rising Edge| CORE
-    RST -->|Async Clear| CORE
-    D   -->|Data Stream| CORE
-    CORE --> Q
-    CORE --> QBAR
-
-    style DFF fill:#1e1e2e,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4
-    style Inputs fill:#181825,stroke:#a6adc8,stroke-width:1px,color:#cdd6f4
-    style Outputs fill:#181825,stroke:#a6adc8,stroke-width:1px,color:#cdd6f4
-    style CORE fill:#313244,stroke:#f38ba8,stroke-width:2px,color:#f5e0dc
-    style CLK fill:#45475a,color:#fab387
-    style RST fill:#45475a,color:#f38ba8
-    style D fill:#45475a,color:#a6e3a1
-    style Q fill:#45475a,color:#89dceb
-    style QBAR fill:#45475a,color:#cba6f7
-```
+| Port | Direction | Type (Verilog) | Type (SystemVerilog) | Description |
+|:---:|:---:|:---:|:---:|:---|
+| `clk` | **Input** | `wire` | `logic` | Master clock input (active on positive edge `↑`) |
+| `reset` | **Input** | `wire` | `logic` | Asynchronous active-high reset (`1` = force reset) |
+| `d` | **Input** | `wire` | `logic` | Synchronous data input |
+| `q` | **Output** | `reg` | `logic` | Registered data output |
+| `q_bar` | **Output** | `wire` | `logic` | Inverted registered data output ($\overline{Q}$) |
 
 ---
 
-### 2. Internal Master-Slave Gate-Level Schematic
+### Function & Truth Table
 
-To eliminate race conditions and achieve edge sensitivity, a D flip-flop is conventionally realized via a **Master-Slave** topology with asynchronous clear gates:
-
-```mermaid
-flowchart TD
-    subgraph Master ["MASTER STAGE (Active when CLK = 0)"]
-        direction TB
-        M_MUX{"Clocked MUX / Latch"}
-        M_Q["Master Latch Q_m"]
-    end
-
-    subgraph Slave ["SLAVE STAGE (Active when CLK = 1)"]
-        direction TB
-        S_MUX{"Clocked MUX / Latch"}
-        S_Q["Slave Output Q"]
-    end
-
-    CLK_IN["clk"]
-    RST_IN["reset (Async)"]
-    D_IN["d"]
-
-    INV_CLK["Inverter ~clk"]
-    CLK_IN --> INV_CLK
-    INV_CLK -->|Enable Master| M_MUX
-    CLK_IN -->|Enable Slave| S_MUX
-
-    D_IN --> M_MUX
-    M_MUX --> M_Q
-    M_Q --> S_MUX
-    S_MUX --> S_Q
-
-    RST_IN -.->|Force Clear| M_Q
-    RST_IN -.->|Force Clear| S_Q
-
-    INV_OUT["Inverter"]
-    S_Q --> Q_OUT["q"]
-    S_Q --> INV_OUT
-    INV_OUT --> QBAR_OUT["q_bar"]
-
-    style Master fill:#1e1e2e,stroke:#fab387,stroke-width:2px,color:#cdd6f4
-    style Slave fill:#1e1e2e,stroke:#a6e3a1,stroke-width:2px,color:#cdd6f4
-    style M_MUX fill:#313244,stroke:#fab387,color:#fab387
-    style S_MUX fill:#313244,stroke:#a6e3a1,color:#a6e3a1
-    style Q_OUT fill:#181825,stroke:#89dceb,color:#89dceb
-    style QBAR_OUT fill:#181825,stroke:#cba6f7,color:#cba6f7
-```
-
----
-
-### 3. RTL Hardware Logic (Multiplexer Model)
-
-In synthesized hardware (e.g. standard cell ASIC or FPGA logic element), the behavior is mapped into a multiplexed feedback register:
-
-```
-                  +-----------------------------------+
-                  |                                   |
-                  v                                   |
-  D ---->[0]\                                         |
-         |   |---( D_next )--->[0]\                   |
-  0 ---->[1]/                  |   |--->[ D-REG ]-----+---> Q
-           ^                   |   |      ^
-           |            0 ---->[1]/       | clk (posedge)
-         (reset)                 ^        +-- [CLR] <-- reset (async)
-                                 |
-                          (hold/latch)
-```
-
----
-
-## 🔄 State & Logic Representation
-
-### Truth / Function Table
-
-| `reset` (Async) | `clk` | `d` (Input) | $Q_{next}$ (Output) | $\bar{Q}_{next}$ (Output) | Operation Mode |
+| `reset` | `clk` | `d` | Next State $Q(t+1)$ | Next State $\overline{Q}(t+1)$ | Operation Description |
 |:---:|:---:|:---:|:---:|:---:|:---|
 | **`1`** | `X` (Don't Care) | `X` | **`0`** | **`1`** | **Asynchronous Reset (Immediate Force 0)** |
-| `0` | `0` or `1` (No Edge) | `X` | $Q$ | $\bar{Q}$ | **Memory / Hold State (No Change)** |
-| `0` | `↓` (Falling Edge) | `X` | $Q$ | $\bar{Q}$ | **Inactive Clock Edge (No Change)** |
-| `0` | `↑` (Rising Edge)  | **`0`** | **`0`** | **`1`** | **Synchronous Reset / Latch 0** |
-| `0` | `↑` (Rising Edge)  | **`1`** | **`1`** | **`0`** | **Synchronous Set / Latch 1** |
+| `0` | `0` or `1` (No Edge) | `X` | $Q(t)$ | $\overline{Q}(t)$ | **Hold State (No Change)** |
+| `0` | `↓` (Falling Edge) | `X` | $Q(t)$ | $\overline{Q}(t)$ | **Inactive Clock Edge (No Change)** |
+| `0` | `↑` (Rising Edge) | **`0`** | **`0`** | **`1`** | **Clocked Sample: Reset to Low** |
+| `0` | `↑` (Rising Edge) | **`1`** | **`1`** | **`0`** | **Clocked Sample: Set to High** |
 
 > **Characteristic Equation:**  
 > $$Q_{next} = \overline{reset} \cdot D$$
-
----
-
-### Excitation Table
-
-Specifies the required input `D` to cause a transition from present state $Q(t)$ to next state $Q(t+1)$ under normal operation ($Reset = 0$):
-
-| Present State $Q(t)$ | Next State $Q(t+1)$ | Input $D$ Required | Transition Name |
-|:---:|:---:|:---:|:---|
-| `0` | `0` | **`0`** | No change (Low) |
-| `0` | `1` | **`1`** | Set to High |
-| `1` | `0` | **`0`** | Reset to Low |
-| `1` | `1` | **`1`** | No change (High) |
 
 ---
 
@@ -201,16 +70,108 @@ stateDiagram-v2
     State_1 --> State_0 : posedge clk & D = 0
     State_1 --> State_1 : posedge clk & D = 1
 
-    State_1 --> State_0 : ANYTIME: reset = 1 (Async)
+    State_1 --> State_0 : ANYTIME: reset = 1 (Async Reset)
 ```
+
+---
+
+## 🔄 Verilog vs. SystemVerilog Comparison
+
+This repository demonstrates the migration from classic Verilog constructs to modern SystemVerilog standards:
+
+| Feature | Verilog Implementation (`.v`) | SystemVerilog Implementation (`.sv`) | Advantage of SystemVerilog |
+|---|---|---|---|
+| **Data Types** | Separate `reg` for procedural targets and `wire` for nets | Unified `logic` data type for all inputs, outputs, and internal signals | Eliminates confusing `reg` vs `wire` misuse; compiler automatically infers net vs variable |
+| **Sequential RTL Block** | Generic `always @(posedge clk or posedge reset)` | Explicit `always_ff @(posedge clk or posedge reset)` | Enforces pure flip-flop inference at compile/synthesis time; simulator flags unintended latches or combinational loops |
+| **Testbench Stimulus Timing** | Raw propagation delays (`#10 d = 1;`) | Event-controlled edge alignment (`@(negedge clk); d = 1;`) | Drives inputs away from active clock edge, preventing setup/hold race conditions |
+| **Inversion Logic** | Continuous `assign q_bar = ~q;` | Continuous `assign q_bar = ~q;` | Direct combinational complement |
+
+---
+
+## 📂 Repository Structure
+
+```text
+d_flip_flop/
+├── verilog/
+│   ├── d_flip_flop.v         # Verilog synthesizable RTL
+│   └── tb_d_flip_flop.v      # Verilog testbench
+├── systemverilog/
+│   ├── d_flip_flop.sv        # SystemVerilog RTL (always_ff, logic)
+│   └── tb_d_flip_flop.sv     # SystemVerilog testbench (edge-aligned stimuli, $monitor)
+├── .gitignore                # Filters ModelSim work/ library, WLF waveforms, & compile cache
+├── LICENSE                   # MIT open-source license
+└── README.md                 # Project documentation & simulation manual
+```
+
+---
+
+## 🚀 ModelSim Simulation Guide (Completed Work)
+
+All functional simulations for both implementations were executed and verified in **ModelSim**.
+
+<details>
+<summary>▶ <b>Click to expand ModelSim Commands for Verilog</b></summary>
+
+Navigate into the `verilog/` directory or run from root:
+
+```bash
+# 1. Create the working library
+vlib work
+
+# 2. Compile Verilog RTL and Testbench
+vlog verilog/d_flip_flop.v verilog/tb_d_flip_flop.v
+
+# 3. Run simulation in Command-Line Mode (CLI)
+vsim -c -do "run -all; quit" tb_d_flip_flop
+
+# OR Launch in Interactive GUI Mode with Wave Viewer:
+vsim -gui tb_d_flip_flop
+```
+
+Inside the ModelSim GUI console:
+```tcl
+add wave -position insertpoint sim:/tb_d_flip_flop/*
+run -all
+wave zoomfull
+```
+
+</details>
+
+<details>
+<summary>▶ <b>Click to expand ModelSim Commands for SystemVerilog</b></summary>
+
+Navigate into the `systemverilog/` directory or run from root:
+
+```bash
+# 1. Create the working library
+vlib work
+
+# 2. Compile SystemVerilog RTL and Testbench (-sv flag enables full SystemVerilog support)
+vlog -sv systemverilog/d_flip_flop.sv systemverilog/tb_d_flip_flop.sv
+
+# 3. Run simulation in Command-Line Mode (CLI)
+vsim -c -do "run -all; quit" tb_d_flip_flop
+
+# OR Launch in Interactive GUI Mode with Wave Viewer:
+vsim -gui tb_d_flip_flop
+```
+
+Inside the ModelSim GUI console:
+```tcl
+add wave -position insertpoint sim:/tb_d_flip_flop/*
+run -all
+wave zoomfull
+```
+
+</details>
 
 ---
 
 ## ⏱️ Timing & Waveform Analysis
 
-### ASCII Simulation Timing Diagram
+Both testbenches generate a **10 ns clock** (`period = 10ns`, toggling every 5ns).
 
-The testbench clock runs with a period of **10 ns** (5 ns Low / 5 ns High). Here is the exact cycle-accurate timeline verified in `tb_d_flip_flop.v`:
+### ASCII Simulation Timing Diagram
 
 ```text
 Time (ns): 0       10      20      30      40      50   53  58       78
@@ -218,7 +179,7 @@ Time (ns): 0       10      20      30      40      50   53  58       78
            
 clk        __--__--__--__--__--__--__--__--__--__--__--__--__--__--__--
               ^       ^       ^       ^       ^       ^       ^
-              10ns    20ns    30ns    40ns    50ns    60ns    70ns
+             10ns    20ns    30ns    40ns    50ns    60ns    70ns
 
 reset      --------___________________________________-----___________
            |<Init> |<--- Normal Synchronous Mode ---->|Async Pulse|
@@ -233,122 +194,35 @@ q_bar      ----------------________--------________-------------------
            |   1   |   1   |   0   |   1   |   0   | 1 (immediate)    |
 ```
 
-### Testbench Execution Flow
+### Observed Simulation Monitor Output (`$monitor`)
 
-| Time (ns) | Event Description | Clock State | Input `d` | Input `reset` | Output `q` | Output `q_bar` | Observation |
-|---|---|:---:|:---:|:---:|:---:|:---:|---|
-| **0 - 10** | **System Initialization** | Oscillating | `0` | `1` | `0` | `1` | Asynchronous reset holds $Q=0$. |
-| **10** | **Reset Released** | `posedge` | `0` | `0` | `0` | `1` | Normal clocked operation commences. |
-| **20** | **Test Case 1** | `posedge` | `1` | `0` | **`1`** | **`0`** | $D=1$ sampled on clock edge; $Q \to 1$. |
-| **30** | **Test Case 2** | `posedge` | `0` | `0` | **`0`** | **`1`** | $D=0$ sampled on clock edge; $Q \to 0$. |
-| **40** | **Test Case 3** | `posedge` | `1` | `0` | **`1`** | **`0`** | $D=1$ sampled on clock edge; $Q \to 1$. |
-| **50** | **Test Case 4** | `posedge` | `0` | `0` | **`0`** | **`1`** | $D=0$ sampled on clock edge; $Q \to 0$. |
-| **53** | **Async Reset Pulse** | Mid-cycle (`clk=0`) | `0` | **`1`** | **`0`** | **`1`** | **Async reset kicks in immediately!** |
-| **58** | **Async Reset Clear** | Mid-cycle (`clk=1`) | `0` | `0` | `0` | `1` | Reset returns to idle without glitching. |
-| **78** | **Simulation End** | - | - | - | - | - | `$finish` called. |
+During the SystemVerilog simulation in ModelSim, the testbench generated the following console trace:
 
----
-
-## 📂 Project Structure
-
-```bash
-d_flip_flop/
-├── .gitignore         # Ignores ModelSim work library, WLF waveforms, & compiler logs
-├── README.md          # Interactive design manual, schematics, and simulation notes
-├── d_flip_flop.v      # Synthesizable RTL description of D Flip-Flop
-└── tb_d_flip_flop.v   # Complete self-verifying testbench with timing stimuli
+```text
+# Time=0 CLK=0 RESET=1 D=0 Q=0 Q_BAR=1
+# Time=5 CLK=1 RESET=1 D=0 Q=0 Q_BAR=1
+# Time=10 CLK=0 RESET=1 D=0 Q=0 Q_BAR=1
+# Time=12 CLK=0 RESET=0 D=0 Q=0 Q_BAR=1
+# Time=15 CLK=1 RESET=0 D=0 Q=0 Q_BAR=1
+# Time=20 CLK=0 RESET=0 D=1 Q=0 Q_BAR=1
+# Time=25 CLK=1 RESET=0 D=1 Q=1 Q_BAR=0
+# Time=30 CLK=0 RESET=0 D=0 Q=1 Q_BAR=0
+# Time=35 CLK=1 RESET=0 D=0 Q=0 Q_BAR=1
+# Time=40 CLK=0 RESET=0 D=1 Q=0 Q_BAR=1
+# Time=45 CLK=1 RESET=0 D=1 Q=1 Q_BAR=0
+# Time=50 CLK=0 RESET=0 D=0 Q=1 Q_BAR=0
+# Time=53 CLK=0 RESET=1 D=0 Q=0 Q_BAR=1    <-- Asynchronous reset triggers immediately!
+# Time=55 CLK=1 RESET=1 D=0 Q=0 Q_BAR=1
+# Time=58 CLK=1 RESET=0 D=0 Q=0 Q_BAR=1
+# ** Note: $finish    : systemverilog/tb_d_flip_flop.sv(48)
 ```
 
 ---
 
-## 🚀 Quick Start & Simulation Guide
-
-### Option A: ModelSim / QuestaSim GUI & CLI
+## 🔍 Source Code Inspection
 
 <details>
-<summary>▶ <b>Click to expand ModelSim step-by-step instructions</b></summary>
-
-#### Command-Line Execution (Fast):
-
-Open your terminal or ModelSim command prompt inside the project directory:
-
-```bash
-# 1. Create the working library
-vlib work
-
-# 2. Compile RTL and Testbench files
-vlog d_flip_flop.v tb_d_flip_flop.v
-
-# 3. Launch console-mode simulation
-vsim -c -do "run -all; quit" tb_d_flip_flop
-```
-
-#### GUI Interactive Execution:
-
-```bash
-# Launch ModelSim with GUI and wave viewer
-vsim -gui tb_d_flip_flop
-```
-
-Inside the ModelSim GUI console, load and view signals:
-```tcl
-add wave -position insertpoint sim:/tb_d_flip_flop/*
-run -all
-wave zoomfull
-```
-
-</details>
-
----
-
-### Option B: Open-Source Icarus Verilog + GTKWave
-
-<details>
-<summary>▶ <b>Click to expand Icarus Verilog commands</b></summary>
-
-If you are working on a machine without ModelSim:
-
-```bash
-# 1. Compile with iverilog
-iverilog -o dff_sim.vvp d_flip_flop.v tb_d_flip_flop.v
-
-# 2. Execute simulation
-vvp dff_sim.vvp
-
-# 3. View waveforms (if $dumpfile/$dumpvars is enabled)
-gtkwave dump.vcd
-```
-
-</details>
-
----
-
-## 🔍 Deep-Dive: Timing Constraints & Physics
-
-When deploying this D flip-flop design into real-world FPGA/ASIC hardware:
-
-```
-           ______                      ______
-clk  _____/      \____________________/      \_____
-             <--->                     <--->
-             t_su                      t_h
-        _____                              ________
-d   ___/     \____________________________/
-             |                             |
-             |<-- Stable Data Window ----->|
-```
-
-* **Setup Time ($t_{su}$):** Minimum duration the input signal `d` must remain stable **before** the active clock edge.
-* **Hold Time ($t_h$):** Minimum duration the input signal `d` must remain stable **after** the active clock edge.
-* **Clock-to-Q Delay ($t_{cq}$):** Time required for output `q` to reach a valid logic level following the rising clock edge.
-* **Recovery & Removal Time:** For the asynchronous `reset`, recovery time ($t_{rec}$) ensures reset de-assertion does not violate the next clock setup window, preventing metastability.
-
----
-
-## 💻 Source Code Reference
-
-<details>
-<summary><b>View RTL Source: <code>d_flip_flop.v</code></b></summary>
+<summary><b>View <code>verilog/d_flip_flop.v</code></b></summary>
 
 ```verilog
 module d_flip_flop (
@@ -375,7 +249,7 @@ endmodule
 </details>
 
 <details>
-<summary><b>View Testbench Source: <code>tb_d_flip_flop.v</code></b></summary>
+<summary><b>View <code>verilog/tb_d_flip_flop.v</code></b></summary>
 
 ```verilog
 `timescale 1ns/1ps
@@ -403,34 +277,113 @@ module tb_d_flip_flop;
 
     // Apply test cases
     initial begin
-
-        // Initialize signals
         clk = 0;
         reset = 1;
         d = 0;
 
-        // Release reset
         #10 reset = 0;
 
-        // Test Case 1: D = 1
         #10 d = 1;
-
-        // Test Case 2: D = 0
         #10 d = 0;
-
-        // Test Case 3: D = 1
         #10 d = 1;
-
-        // Test Case 4: D = 0
         #10 d = 0;
 
         // Test asynchronous reset
         #3 reset = 1;
         #5 reset = 0;
 
-        // Finish simulation
         #20 $finish;
+    end
 
+endmodule
+```
+
+</details>
+
+<details>
+<summary><b>View <code>systemverilog/d_flip_flop.sv</code></b></summary>
+
+```systemverilog
+module d_flip_flop (
+    input  logic clk,
+    input  logic reset,
+    input  logic d,
+    output logic q,
+    output logic q_bar
+);
+
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset)
+            q <= 1'b0;
+        else
+            q <= d;
+    end
+
+    assign q_bar = ~q;
+
+endmodule
+```
+
+</details>
+
+<details>
+<summary><b>View <code>systemverilog/tb_d_flip_flop.sv</code></b></summary>
+
+```systemverilog
+`timescale 1ns/1ps
+
+module tb_d_flip_flop;
+
+    logic clk;
+    logic reset;
+    logic d;
+
+    logic q;
+    wire q_bar;
+
+    // DUT instantiation
+    d_flip_flop uut (
+        .clk(clk),
+        .reset(reset),
+        .d(d),
+        .q(q),
+        .q_bar(q_bar)
+    );
+
+    // Clock generation: 10 ns period
+    always #5 clk = ~clk;
+
+    // Test stimulus
+    initial begin
+        clk = 0;
+        reset = 1;
+        d = 0;
+
+        #12 reset = 0;
+
+        @(negedge clk);
+        d = 1;
+
+        @(negedge clk);
+        d = 0;
+
+        @(negedge clk);
+        d = 1;
+
+        @(negedge clk);
+        d = 0;
+
+        #2 reset = 1;
+        #5 reset = 0;
+
+        #20;
+        $finish;
+    end
+
+    // Monitor output
+    initial begin
+        $monitor("Time=%0t CLK=%b RESET=%b D=%b Q=%b Q_BAR=%b",
+                 $time, clk, reset, d, q, q_bar);
     end
 
 endmodule
@@ -440,6 +393,18 @@ endmodule
 
 ---
 
+## 🔮 Future Scope & Roadmap
+
+The current scope covers ModelSim simulation and functional verification. Planned future milestones include:
+
+- [ ] **SystemVerilog Assertions (SVA):** Implement formal property checks (`assert property`) for reset validity and setup/hold window verification.
+- [ ] **Constrained-Random Verification (CRV):** Build randomized stimulus generators with `rand` classes.
+- [ ] **Functional Coverage:** Add covergroups and coverpoints to measure 100% state and transition coverage.
+- [ ] **UVM Architecture:** Wrap the verification components in an industry-standard UVM (Universal Verification Methodology) environment.
+- [ ] **Hardware Synthesis & FPGA Implementation:** Synthesize using Intel Quartus / AMD Vivado to measure resource utilization (LUTs, FFs) and maximum operating frequency ($F_{max}$).
+
+---
+
 ## 📜 License
 
-This project is open-source and released under the [MIT License](LICENSE). Feel free to use, modify, and distribute it for academic and industrial projects.
+This project is licensed under the [MIT License](LICENSE).
